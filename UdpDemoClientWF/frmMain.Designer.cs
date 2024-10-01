@@ -34,7 +34,7 @@
             numPort = new NumericUpDown();
             txtMessage = new TextBox();
             label3 = new Label();
-            button1 = new Button();
+            btnSend = new Button();
             groupBox1 = new GroupBox();
             txtLog = new TextBox();
             label4 = new Label();
@@ -77,7 +77,7 @@
             numPort.Name = "numPort";
             numPort.Size = new Size(150, 31);
             numPort.TabIndex = 1;
-            numPort.Value = new decimal(new int[] { 54445, 0, 0, 0 });
+            numPort.Value = new decimal(new int[] { 12345, 0, 0, 0 });
             // 
             // txtMessage
             // 
@@ -98,15 +98,15 @@
             label3.TabIndex = 5;
             label3.Text = "Type";
             // 
-            // button1
+            // btnSend
             // 
-            button1.Location = new Point(12, 230);
-            button1.Name = "button1";
-            button1.Size = new Size(333, 43);
-            button1.TabIndex = 4;
-            button1.Text = "Send Packet";
-            button1.UseVisualStyleBackColor = true;
-            button1.Click += button1_Click;
+            btnSend.Location = new Point(12, 230);
+            btnSend.Name = "btnSend";
+            btnSend.Size = new Size(333, 43);
+            btnSend.TabIndex = 4;
+            btnSend.Text = "Send Packet";
+            btnSend.UseVisualStyleBackColor = true;
+            btnSend.Click += btnSend_Click;
             // 
             // groupBox1
             // 
@@ -156,7 +156,7 @@
             Controls.Add(cbType);
             Controls.Add(label4);
             Controls.Add(groupBox1);
-            Controls.Add(button1);
+            Controls.Add(btnSend);
             Controls.Add(label3);
             Controls.Add(txtMessage);
             Controls.Add(numPort);
@@ -166,7 +166,7 @@
             MaximizeBox = false;
             Name = "frmMain";
             Text = "UDP Test App";
-            FormClosing += frmMain_FormClosing_1;
+            FormClosing += frmMain_FormClosing;
             Load += frmMain_Load;
             ((System.ComponentModel.ISupportInitialize)numPort).EndInit();
             groupBox1.ResumeLayout(false);
@@ -184,7 +184,7 @@
         private TextBox txtMessage;
         private Label label3;
         private SplitContainer splitContainer1;
-        private Button button1;
+        private Button btnSend;
         private GroupBox groupBox1;
         private TextBox txtLog;
         private Label label4;

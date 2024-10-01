@@ -1,9 +1,11 @@
+using System.Media;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
 namespace UdpDemoClientWF
 {
+
     public partial class frmMain : Form
     {
 
@@ -16,6 +18,7 @@ namespace UdpDemoClientWF
         // When the application closes, this flag is set to True, so the socket thread will abort.
         private bool isClosing = false;
 
+        // Class initializer
         public frmMain()
         {
 
@@ -31,6 +34,7 @@ namespace UdpDemoClientWF
 
         }
 
+        // Load method - fires AFTER the form has initialized but before being displayed
         private void frmMain_Load(object sender, EventArgs e)
         {
             // Wait for the form to be fully loaded before actually listening for UDP packets.
@@ -41,6 +45,9 @@ namespace UdpDemoClientWF
 
             // Create a new UdpClient object and bind it to the source port.
             udp = new UdpClient(sourcePort);
+
+            // Set the source port control to the source port selected by default
+            numPort.Value = sourcePort;
 
             // Log the port udp is listening on.
             txtLog.Text += $"Listening for messages on port: {sourcePort}\r\n\r\n";
@@ -55,6 +62,46 @@ namespace UdpDemoClientWF
             // Ready to go.
         }
 
+        private void btnSend_Click(object sender, EventArgs e)
+        {
+            // Try to parse the IP address; throw a messagebox up with an error if it's in an incorrect format.
+            if (!IPAddress.TryParse(txtIpAddress.Text, out IPAddress ip))
+            {
+                MessageBox.Show("Invalid IP address.", "Invalid Input", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+            // Setup a UDP client to send the packet
+            UdpClient udp = new UdpClient();
+
+            byte[] data = [];
+
+            // Form the packet
+            switch (cbType.SelectedIndex)
+            {
+                case 0:
+                    // Send a string message
+                    data = Encoding.ASCII.GetBytes("MSG " + txtMessage.Text);
+                    break;
+                case 1:
+                    // send a sound message
+                    data = Encoding.ASCII.GetBytes("SND");
+                    break;
+                case 2:
+                    // send exit message
+                    data = Encoding.ASCII.GetBytes("QUIT");
+                    break;
+            }
+
+            // Send the packet
+            udp.Send(
+                data,
+                data.Length,
+                txtIpAddress.Text,
+                (int)numPort.Value
+            );
+
+        }
+
         private void Receive()
         {
             // This method will run in a separate thread.
@@ -62,6 +109,7 @@ namespace UdpDemoClientWF
             // Loop forever.
             while (true)
             {
+
 
                 // Wait for a packet to arrive.
                 // If no packet received in 1s, continue the loop.
@@ -91,37 +139,63 @@ namespace UdpDemoClientWF
                 }
 
                 string payload = Encoding.ASCII.GetString(data);
-                string logMessage = $"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss:")} Received {data.Length} bytes from {remoteEP.Address}:{remoteEP.Port}:\r\n{payload}\r\n\r\n";
 
-                // Update the TextBox on the UI thread.
-                // We need to use Invoke to instruct the main UI thread to update the textbox, since we can't update it
-                // directly on this thread.
-                txtLog.Invoke((MethodInvoker)delegate
+                // Parse the payload
+                DemoUdpMessage message;
+                try { 
+                    message = DemoUdpMessage.Parse(data);
+                }
+                catch (ArgumentException ex)
                 {
-                    txtLog.AppendText(logMessage);
-                });
+                    // Log the error
+                    txtLog.Invoke((MethodInvoker)delegate
+                    {
+                        txtLog.AppendText($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss:")} Error parsing message: {ex.Message}\r\n");
+                    });
+                    continue;
+                }
+
+                // Switch based on the actual type of message
+                switch (message)
+                {
+                    case DemoUdpStringMessage msg:
+                        // Log the message
+                        txtLog.Invoke((MethodInvoker)delegate
+                        {
+                            txtLog.AppendText($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss:")} Received message: {msg.Message}\r\n");
+                        });
+                        continue;
+                    case DemoUdpSoundMessage snd:
+                        // Log the sound message
+                        txtLog.Invoke((MethodInvoker)delegate
+                        {
+                            txtLog.AppendText($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss:")} Received sound message\r\n");
+                        });
+                        // Play the system default sound
+                        SystemSounds.Beep.Play();
+                        continue;
+                    case DemoUdpQuitMessage quit:
+                        // Log the quit message
+                        txtLog.Invoke((MethodInvoker)delegate
+                        {
+                            txtLog.AppendText($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss:")} Received quit message\r\n");
+                        });
+                        // Signal the main thread to close the application
+                        this.Invoke((MethodInvoker)delegate
+                        {
+                            this.Close();
+                        });
+                        return;
+                    default:
+                        // Log the error
+                        txtLog.Invoke((MethodInvoker)delegate
+                        {
+                            txtLog.AppendText($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss:")} Unknown message type\r\n");
+                        });
+                        break;
+                }
 
             }
-        }
-
-        private void button1_Click(object sender, EventArgs e)
-        {
-            // Try to parse the IP address; throw a messagebox up with an error if it's in an incorrect format.
-            if (!IPAddress.TryParse(txtIpAddress.Text, out IPAddress ip))
-            {
-                MessageBox.Show("Invalid IP address.", "Invalid Input", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
-            // Setup a UDP client to send the packet
-            UdpClient udp = new UdpClient();
-            // Send the packet
-            udp.Send(
-                Encoding.ASCII.GetBytes(txtMessage.Text),
-                txtMessage.Text.Length,
-                txtIpAddress.Text,
-                (int)numPort.Value
-            );
-
         }
 
         private void cbType_SelectedIndexChanged(object sender, EventArgs e)
@@ -137,7 +211,7 @@ namespace UdpDemoClientWF
             }
         }
 
-        private void frmMain_FormClosing_1(object sender, FormClosingEventArgs e)
+        private void frmMain_FormClosing(object sender, FormClosingEventArgs e)
         {
             // Form is closing - stop the listening socket and thread so the app can exit.
 
