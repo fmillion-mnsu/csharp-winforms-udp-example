@@ -6,7 +6,7 @@ This application is written in C#, uses Windows Forms, and implements a UDP clie
 
 1. Run the program
 2. By default the program will send messages to your local machine on the listening port, making it a simple loopback communication. Try sending a few messages and observe the log.
-3. On another PC on the same network, you can run the same application and then use that machine's IP address and the randomly selected UDP port. Fill in those values into the first PC and try sending messages to another machine1
+3. On another PC on the same network, you can run the same application and then use that machine's IP address and the randomly selected UDP port. Fill in those values into the first PC and try sending messages to another machine.
 
 ## Exploring the code
 
